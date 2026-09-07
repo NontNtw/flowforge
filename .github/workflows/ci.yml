@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repository:
+    name: Repository Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate repository files
+        run: |
+          test -f README.md
+          test -f CONTRIBUTING.md
+          test -f Makefile
+          test -f .gitignore
+          test -f .github/pull_request_template.md
+          test -f .github/workflows/ci.yml
+
+      - name: Validate repository structure
+        run: |
+          test -d apps/api
+          test -d apps/worker
+          test -d apps/web
+          test -d internal
+          test -d platform
+          test -d migrations
+          test -d sql/queries
+          test -d sql/schema
+          test -d api
+          test -d deployments
+          test -d docs/architecture
+          test -d docs/adr
