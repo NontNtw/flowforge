@@ -45,6 +45,10 @@ func TestGetEnvUsesEnvironmentValue(t *testing.T) {
 func TestLoadFromEnvironment(t *testing.T) {
 	t.Setenv("FLOWFORGE_APP_NAME", "flowforge-api")
 	t.Setenv("FLOWFORGE_ENV", "staging")
+	t.Setenv(
+		"FLOWFORGE_DATABASE_URL",
+		"postgres://flowforge:secret@localhost:5432/flowforge?sslmode=disable",
+	)
 
 	cfg, err := Load()
 	if err != nil {
@@ -60,6 +64,17 @@ func TestLoadFromEnvironment(t *testing.T) {
 			"expected environment %q, got %q",
 			EnvironmentStaging,
 			cfg.Environment,
+		)
+	}
+
+	expectedDatabaseURL :=
+		"postgres://flowforge:secret@localhost:5432/flowforge?sslmode=disable"
+
+	if cfg.DatabaseURL != expectedDatabaseURL {
+		t.Fatalf(
+			"expected database URL %q, got %q",
+			expectedDatabaseURL,
+			cfg.DatabaseURL,
 		)
 	}
 }
@@ -81,5 +96,34 @@ func TestLoadRejectsUnsupportedEnvironment(t *testing.T) {
 	_, err := Load()
 	if err == nil {
 		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestLoadAllowsUnsetDatabaseURL(t *testing.T) {
+	t.Setenv("FLOWFORGE_APP_NAME", "flowforge")
+	t.Setenv("FLOWFORGE_ENV", "local")
+
+	previous, existed := os.LookupEnv("FLOWFORGE_DATABASE_URL")
+
+	if err := os.Unsetenv("FLOWFORGE_DATABASE_URL"); err != nil {
+		t.Fatalf("unset database URL: %v", err)
+	}
+
+	t.Cleanup(func() {
+		if existed {
+			_ = os.Setenv("FLOWFORGE_DATABASE_URL", previous)
+			return
+		}
+
+		_ = os.Unsetenv("FLOWFORGE_DATABASE_URL")
+	})
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+
+	if cfg.DatabaseURL != "" {
+		t.Fatalf("expected empty database URL, got %q", cfg.DatabaseURL)
 	}
 }

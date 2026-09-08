@@ -17,12 +17,14 @@ const (
 type Config struct {
 	AppName     string
 	Environment Environment
+	DatabaseURL string
 }
 
 func Load() (Config, error) {
 	cfg := Config{
 		AppName:     getEnv("FLOWFORGE_APP_NAME", "flowforge"),
 		Environment: Environment(getEnv("FLOWFORGE_ENV", string(EnvironmentLocal))),
+		DatabaseURL: getEnv("FLOWFORGE_DATABASE_URL", ""),
 	}
 
 	if err := cfg.Validate(); err != nil {
